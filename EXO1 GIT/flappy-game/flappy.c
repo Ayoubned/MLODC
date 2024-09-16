@@ -30,6 +30,15 @@ int score;
 int best;
 int idle_time = 30;
 float frame = 0;
+SDL_Color pillar_colors[] = {
+    {0, 255, 0, 255},
+    {255, 0, 0, 255},
+    {0, 0, 255, 255},
+    {255, 0, 255, 255},
+    {255, 255, 0, 255},
+    {0, 255, 255, 255}
+};
+int current_pillar_color = 0;
 
 SDL_Color bg_color = {0, 0, 0}; 
 SDL_Event event;
@@ -61,12 +70,18 @@ int main()
                         case SDL_KEYDOWN:
 				if (event.key.keysym.sym == SDLK_ESCAPE){
 					exit(0);
-				}else if (event.key.keysym.sym == SDLK_b) {
+
+				}else if (event.key.keysym.sym == SDLK_p) {
+                                current_pillar_color = (current_pillar_color + 1) % 6;
+                                }
+
+				else if (event.key.keysym.sym == SDLK_b) {
                                 // Change background color by cycling through different colors
                                 bg_color.r = rand() % 256;
                                 bg_color.g = rand() % 256;
                                 bg_color.b = rand() % 256;
-    }
+                                }
+
                         case SDL_MOUSEBUTTONDOWN:
                                 if(gamestate == ALIVE)
                                 {
@@ -96,10 +111,6 @@ void setup()
                 SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, W, H, SDL_WINDOW_SHOWN);
         renderer = SDL_CreateRenderer(win, -1, SDL_RENDERER_PRESENTVSYNC);
         if(!renderer) exit(fprintf(stderr, "Could not create SDL renderer\n"));
-
-        surf = SDL_LoadBMP("res/pillar.bmp");
-        SDL_SetColorKey(surf, 1, 0xffff00);
-        pillar = SDL_CreateTextureFromSurface(renderer, surf);
         surf = SDL_LoadBMP("res/background.bmp");
         background = SDL_CreateTextureFromSurface(renderer, surf);
 
@@ -180,17 +191,26 @@ void update_pipe(int i)
 //draw everything in the game on the screen
 void draw_stuff()
 {
+
         SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, 255);
         SDL_RenderClear(renderer);
+
 
 
         //draw pipes
         for(int i = 0; i < 2; i++)
         {
                 int lower = pipe_y[i] + GAP;
-                SDL_RenderCopy(renderer, pillar, NULL, &(SDL_Rect){pipe_x[i], pipe_y[i] - H, PIPE_W, H});
-                SDL_Rect src = {0, 0, 86, H - lower - GROUND};
-                SDL_RenderCopy(renderer, pillar, &src, &(SDL_Rect){pipe_x[i], lower, PIPE_W, src.h});
+                SDL_SetRenderDrawColor(renderer,
+                    pillar_colors[current_pillar_color].r,
+                    pillar_colors[current_pillar_color].g,
+                    pillar_colors[current_pillar_color].b,
+                    pillar_colors[current_pillar_color].a);
+                SDL_Rect upper_pillar_rect = { pipe_x[i], pipe_y[i] - H, PIPE_W, H };
+                SDL_RenderFillRect(renderer, &upper_pillar_rect);
+                SDL_Rect lower_pillar_rect = { pipe_x[i], lower, PIPE_W, H - lower - GROUND };
+                SDL_RenderFillRect(renderer, &lower_pillar_rect);
+
         }
 
         //draw player
