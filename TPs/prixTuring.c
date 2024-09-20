@@ -17,8 +17,8 @@
 #include <assert.h>
 typedef struct {
     int year;
-    char winners[256];
-    char work[512];
+    char *winners;
+    char *work;
 } TuringWinner;
 
 
@@ -39,7 +39,15 @@ void readWinners(FILE *file, TuringWinner *winners, int count) {
     char buffer[1024];
     for (int i = 0; i < count; i++) {
         fgets(buffer, sizeof(buffer), file);  
-        sscanf(buffer, "%d;%255[^;];%511[^\n]", &winners[i].year, winners[i].winners, winners[i].work); 
+
+        char tempWinners[256], tempWork[512];
+        sscanf(buffer, "%d;%255[^;];%511[^\n]", &winners[i].year, tempWinners, tempWork);
+
+        winners[i].winners = malloc(strlen(tempWinners) + 1);  
+        winners[i].work = malloc(strlen(tempWork) + 1);         
+
+        strcpy(winners[i].winners, tempWinners);
+        strcpy(winners[i].work, tempWork);
     }
 }
 
@@ -48,6 +56,22 @@ void printWinners(FILE *file, TuringWinner *winners, int count) {
     for (int i = 0; i < count; i++) {
         fprintf(file, "%d;%s;%s\n", winners[i].year, winners[i].winners, winners[i].work);  
     }
+}
+void freeWinners(TuringWinner *winners, int count) {
+    for (int i = 0; i < count; i++) {
+        free(winners[i].winners); 
+        free(winners[i].work);     
+    }
+}
+void infosAnnee(TuringWinner *winners, int count, int year) {
+    for (int i = 0; i < count; i++) {
+        if (winners[i].year == year) {
+            printf("L'annee %d, le(s) gagnant(s) ont été : %s\n", year, winners[i].winners);
+            printf("Nature des travaux : %s\n", winners[i].work);
+            return;
+        }
+    }
+    printf("Aucun gagnant trouvé pour l'année %d.\n", year);
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,13 +82,16 @@ int main(int argc, char** argv)
 {
 	char *filename = "turingWinners.csv";  
     char *outputFilename = "out.csv";      
+    int infoYear = -1;                     
 
     
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) {
-            outputFilename = argv[++i]; 
-        } else {
-            filename = argv[i]; 
+            outputFilename = argv[++i];  
+        } else if (strcmp(argv[i], "--info") == 0 && i + 1 < argc) {
+            infoYear = atoi(argv[++i]);  
+        }  else {
+            filename = argv[i];  
         }
     }
 
@@ -97,11 +124,14 @@ int main(int argc, char** argv)
 
     
     readWinners(inputFile, winners, count);
-
-   
     printWinners(outputFile, winners, count);
 
-   
+    if (infoYear != -1) {
+        infosAnnee(winners, count, infoYear);
+    }
+
+
+    freeWinners(winners, count);
     free(winners);
     fclose(inputFile);
     fclose(outputFile);
