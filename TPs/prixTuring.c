@@ -73,6 +73,15 @@ void infosAnnee(TuringWinner *winners, int count, int year) {
     }
     printf("Aucun gagnant trouvé pour l'année %d.\n", year);
 }
+int compareYears(const void *a, const void *b) {
+    TuringWinner *winnerA = (TuringWinner *)a;
+    TuringWinner *winnerB = (TuringWinner *)b;
+    return (winnerA->year - winnerB->year); 
+}
+
+void sortTuringWinnersByYear(TuringWinner *winners, int count) {
+    qsort(winners, count, sizeof(TuringWinner), compareYears);  
+}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // MAIN
@@ -83,14 +92,16 @@ int main(int argc, char** argv)
 	char *filename = "turingWinners.csv";  
     char *outputFilename = "out.csv";      
     int infoYear = -1;                     
-
+    int sortFlag = 0; 
     
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) {
             outputFilename = argv[++i];  
         } else if (strcmp(argv[i], "--info") == 0 && i + 1 < argc) {
             infoYear = atoi(argv[++i]);  
-        }  else {
+        } else if (strcmp(argv[i], "--sort") == 0) {
+            sortFlag = 1;  
+        } else {
             filename = argv[i];  
         }
     }
@@ -130,6 +141,10 @@ int main(int argc, char** argv)
         infosAnnee(winners, count, infoYear);
     }
 
+    if (sortFlag) {
+        sortTuringWinnersByYear(winners, count);
+        printWinners(outputFile, winners, count);  
+    }
 
     freeWinners(winners, count);
     free(winners);
